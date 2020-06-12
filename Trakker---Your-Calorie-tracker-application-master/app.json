@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "trakker",
+    "slug": "trakker",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#384C86"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "description": "SignUp and SignIn implemented and state management has been applied, i.e. if you are once logged in in a particular device you will remain logged in until you SignOut. Email Verification has been added. BootomTabNavigation added"
+  }
+}
