@@ -1,5 +1,5 @@
 //import liraries
-import React, { useState } from 'react';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Image, Dimensions, StatusBar, SafeAreaView, Keyboard, 
     KeyboardAvoidingView, TouchableWithoutFeedback, Modal, FlatList} from 'react-native';
 
@@ -9,12 +9,32 @@ import {
     Input,
     Icon
   } from 'native-base'
-
 import data from '../../Countries'
 
 import { useFonts } from '@use-expo/font'
+import { AuthContext } from '../../navigation/AuthProvider'
+
+import * as Google from 'expo-google-app-auth'
+
+import * as FirebaseRecaptcha from 'expo-firebase-recaptcha';
+// import Firebase, {firebaseConfig} from '../config/Firebase';
+
+import * as firebase from 'firebase'
+
 
 const {width, height} = Dimensions.get('window');
+
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBzuL4r3YG7BDdq1MDjd2C-10LHxfbCqT8",
+    authDomain: "trakker-e141d.firebaseapp.com",
+    databaseURL: "https://trakker-e141d.firebaseio.com",
+    projectId: "trakker-e141d",
+    storageBucket: "trakker-e141d.appspot.com",
+    messagingSenderId: "285618643406",
+    appId: "1:285618643406:web:ba2eed02836f16148fcb9f",
+    measurementId: "G-K0S40CMVG7"
+};
 
 
 
@@ -29,8 +49,15 @@ const SignUpScreen = ({ navigation }) => {
         'Avenir': require('../../assets/fonts/AvenirLTStd-Roman.otf')
     });
 
+    const { onSignIn } = useContext(AuthContext)
+
     const [flag, setFlag ] = useState(defaultFlag)
+    const [countryCode, setCountryCode ] = useState("+91")
     const [ modalVisible, setModalVisible ] = useState(false)
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [code, setCode] = useState('');
+    const [verificationId, setVerificationId] = useState(null)
+    const recaptchaVerifier = useRef(null)
 
 
     const showModal = () => {
@@ -40,6 +67,32 @@ const SignUpScreen = ({ navigation }) => {
     const hideModal = () => {
         setModalVisible(false);
     }
+
+    const sendVerification =  async () => {
+        try {
+
+            
+            const tempPhone = countryCode.concat(phoneNumber)
+            
+            const phoneProvider = new firebase.auth.PhoneAuthProvider();
+            // setVerifyInProgress(true);
+            setVerificationId("");
+            const verificationId = await phoneProvider
+              .verifyPhoneNumber(tempPhone, recaptchaVerifier.current);
+            // setVerifyInProgress(false);
+            setVerificationId(verificationId);
+            setCountryCode("+91")
+            setPhoneNumber("")
+
+            navigation.navigate("VerificationScreen", {
+                verificationId: verificationId,
+            });
+
+        } catch(err) {
+            alert(err.message);
+        }
+
+    };
 
     const selectCountry = async (country) => {
         // Get data from Countries.js  
@@ -61,17 +114,59 @@ const SignUpScreen = ({ navigation }) => {
           console.log(err)
         }
     }
+
+    const [signedIn, setSignedIn ] = useState(false)
+    const [name, setName ] = useState("")
+    const [photoUrl, setPhotoUrl ] = useState("")
+
+    const { user, setUser } = useContext(AuthContext);
+
+
+    const ANDROID_CLIENT_ID = "1024080666820-6ocg5ivpmoitr8rishk11fpfdj3g9p91.apps.googleusercontent.com"
+
+    const signInWithGoogle = async () => {
+        try {
+          const result = await Google.logInAsync({
+            // iosClientId: IOS_CLIENT_ID,
+            androidClientId: ANDROID_CLIENT_ID,
+            scopes: ["profile", "email"]
+          });
+          
+          if (result.type === "success") {
+            console.log("LoginScreen.js.js 21 | ", result.user.givenName);
+            setSignedIn(true);
+            setName(result.user.name)
+            setPhotoUrl(result.user.photoUrl)
+            // setUser(result.user);
+            onSignIn(result);
+
+
+          } else {
+            return { cancelled: true };
+          }
+        } catch (e) {
+          console.log('LoginScreen.js.js 30 | Error with login', e);
+          return { error: true };
+        }
+    };
+
+
     
     const countryData = data
     return (
         <View style={styles.container}>
             <StatusBar backgroundColor="black" barStyle="default"/>
+            
                <Image
                     source = {require('../../assets/header.png')}
                     style={{flex:1, ...styles.headerImg}}
                 />
 
                 <View style={styles.form}>
+                    <FirebaseRecaptcha.FirebaseRecaptchaVerifierModal
+                        ref={recaptchaVerifier}
+                        firebaseConfig={firebaseConfig}
+                    />
 
                     <Text style={styles.text_footer}>Sign-In:</Text>
                     <View style={styles.action}>
@@ -107,6 +202,9 @@ const SignUpScreen = ({ navigation }) => {
                                             autoCapitalize='none'
                                             autoCorrect={false}
                                             secureTextEntry={false}
+                                            onChangeText={(phoneNumber) => {
+                                                setPhoneNumber(phoneNumber)  
+                                            }}
                     
                                         />
 
@@ -152,7 +250,7 @@ const SignUpScreen = ({ navigation }) => {
 
                     <TouchableOpacity 
                         style={styles.startBtn}
-                        onPress={() => navigation.navigate("VerificationScreen")}
+                        onPress={sendVerification}
                     >
                         <Text style={{color: "#384C86", fontFamily:'Avenir', fontWeight:"500", fontSize:20}}>Sign In</Text>
                     </TouchableOpacity>
@@ -162,6 +260,7 @@ const SignUpScreen = ({ navigation }) => {
 
                     <TouchableOpacity 
                         style={styles.googlebox}
+                        onPress={signInWithGoogle}
                     >
                         <View style={styles.icon}>
                             <Image 
@@ -180,6 +279,7 @@ const SignUpScreen = ({ navigation }) => {
                     />
                 </View>
                 
+            {/* </Animatable.View> */}
         </View>
     );
 }
@@ -208,7 +308,6 @@ const styles = StyleSheet.create({
     },
     form: {
         flex: 1,
-
         position:"absolute",
         top: height*0.2,
         alignItems:'center',
@@ -217,7 +316,6 @@ const styles = StyleSheet.create({
     logo: {
         height: height*0.1,
         width: width*.5,
-        // bottom: -width*0.3,
         marginTop: 80,
         // backgroundColor:'red'
     },
@@ -235,7 +333,6 @@ const styles = StyleSheet.create({
         left: 0,
         justifyContent: 'center',
         flexDirection: 'column',
-        // backgroundColor: '#384C86'
     },
     iconStyle: {
         color: '#97A8D5',
@@ -302,9 +399,6 @@ const styles = StyleSheet.create({
         elevation: 5
     },
     icon : {
-        // flex : 1,
-        // alignItems : 'center',
-        // justifyContent: 'center'
         position:'absolute',
         left:-6,
         top:-5
@@ -317,8 +411,6 @@ const styles = StyleSheet.create({
     googleLogo: {
         width:70,
         height:60,
-        // backgroundColor:'red',
-        // marginLeft:-2
     }
   });
 

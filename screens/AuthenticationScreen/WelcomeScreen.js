@@ -99,7 +99,6 @@ const styles = StyleSheet.create({
         position: "absolute",
         height: height*.33,
         width: width*.45,
-        // right: width*.5,
         left:0,
         bottom: height*.12
     },
@@ -128,9 +127,6 @@ const styles = StyleSheet.create({
         position: "absolute",
         bottom: height*0.03,
         left: width* 0.2,
-        // alignItems: "center",
-        // justifyContent: "center",
-        // borderRadius: 30,
     }
 });
 

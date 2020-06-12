@@ -2,15 +2,26 @@ import 'react-native-gesture-handler';
 
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { YellowBox } from 'react-native'
+import _ from 'lodash'
 
-import { NavigationContainer } from '@react-navigation/native';
-import AuthStackScreen from './navigation/AuthStackScreen'
+import Providers from './navigation'
 
-export default function App() {
+const App = () => {
+
+  YellowBox.ignoreWarnings(['Setting a timer']);
+  const _console = _.clone(console);
+  console.warn = message => {
+    if (message.indexOf('Setting a timer') <= -1) {
+      _console.warn(message);
+    }
+  };
+
+
   return (
-      <NavigationContainer>
-        <AuthStackScreen />
-      </NavigationContainer>
+      <Providers />
   );
 }
 
+
+export default App;
